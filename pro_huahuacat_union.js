@@ -3,7 +3,7 @@
 // @name:zh           【PRO版本】B站哔哩哔哩使用增强，全网VIP视频免费破解去广告，知乎使用增强，短视频无水印下载，油管、Facebook等国外视频解析下载等😈
 // @name:zh-TW		  【PRO版本】B站嗶哩嗶哩使用增強，全網VIP視頻免費破解去廣告，知乎使用增強，短視頻無水印下載，油管、Facebook等國外視頻解析下載等😈
 // @namespace         bilibili_namespace_20230625
-// @version           2.3.4
+// @version           2.3.5
 // @description       功能可选择性打开：1、B站使用增强：支持视频下载(👉支持多P批量快速下载👈)、浏览记录提示、一键三连、自动签到、描述文本网址转链接等；2、全网VIP视频解析：爱奇艺、腾讯、优酷、bilibili等视频免费解析(支持自定义解析接口)；3、知乎使用助手：内容种类标识、问答显示优化、视频下载等；4、短视频去水印下载：支持知乎、抖音、快手等；5、油管、Facebook、Tiktok等国外视频解析下载；🔥6、搜索引擎功能增强,百度添加网址显示，google结果新标签页打开灯,导航可自定义网址【脚本长期维护更新，完全免费，无广告，仅限学习交流！！】
 // @description:zh    功能可选择性打开：1、B站使用增强：支持视频下载(👉支持多P批量快速下载👈)、浏览记录提示、一键三连、自动签到、描述文本网址转链接等；2、全网VIP视频解析：爱奇艺、腾讯、优酷、bilibili等视频免费解析(支持自定义解析接口)；3、知乎使用助手：内容种类标识、问答显示优化、视频下载等；4、短视频去水印下载：支持知乎、抖音、快手等；5、油管、Facebook、Tiktok等国外视频解析下载；🔥6、搜索引擎功能增强,百度添加网址显示，google结果新标签页打开灯,导航可自定义网址【脚本长期维护更新，完全免费，无广告，仅限学习交流！！】
 // @description:zh-TW 功能可選擇性開啟：1、B站使用增強：支援視頻下載(👉支援多P批量快速下載👈)、瀏覽記錄提示、一鍵三連、自動簽到、描述文本網址轉連結等；2、全網VIP視頻解析：愛奇藝、騰訊、優酷、bilibili等視頻免費解析(支援自定義解析介面)；3、知乎使用助手：內容種類標識、問答顯示優化、視頻下載等；4、短視頻去水印下載：支援知乎、抖音、快手等；5、油管、Facebook、Tiktok等國外視頻解析下載；🔥6、搜索引擎功能增強,百度添加網址顯示，google結果新標籤頁開啟燈,導航可自定義網址【指令碼或直譯式程式長期維護更新，完全免費，無廣告，僅限學習交流！！】
@@ -185,6 +185,7 @@
 // @grant             GM_addElement
 // @license           AGPL License
 // @charset		      UTF-8
+// @noframes
 // @run-at            document-idle
 // @downloadURL       https://api.staticj.top/script/update/huahuacat_pro_union.user.js
 // @updateURL         https://api.staticj.top/script/update/huahuacat_pro_union.meta.js
@@ -1555,28 +1556,117 @@ function SuperVideoHelper(originalInterfaceList) {
   this.customInterfaceKey = "custom_interface_key_dddsdxxa";
   this.quicklyInterfaceKey = "custom_quickly_interface_key_dddsdxxa";
   this.defaultQuicklyInterfaceIndex = 1;
-  this.isRun = function() { //判断是否运行
-    const host = window.location.host;
-    const urls = ["www.iqiyi.com", "v.qq.com", "youku.com", "www.le.com", "mgtv.com", "sohu.com", "acfun.cn", "bilibili.com",
-      "baofeng.com", "pptv.com", "1905.com", "miguvideo.com", "sports.iqiyi.com"
-    ];
-    let result = false;
-    if (!host.startsWith("m.")) { //不是移动端执行
-      for (let i = 0; i < urls.length; i++) {
-        if (window.location.host.includes("bilibili.com")) {
-          if (window.location.href.includes("www.bilibili.com/bangumi/play")) {
-            result = true;
-            break;
-          }
-        } else {
-          if (window.location.host.includes(urls[i])) {
-            result = true;
-            break;
-          }
+  this.detectVideoPlatform = function(url=window.location.href) {
+    const { host, pathname } = new URL(url);
+    const rules = [
+        {
+            name: 'youku',
+            hosts: [/youku\.com$/],
+            paths: [
+                /^\/v_/,
+                /^\/video\/id_/,
+                /^\/alipay_video\//
+            ]
+        },
+        {
+            name: 'iqiyi',
+            hosts: [/iqiyi\.com$/],
+            paths: [
+                /^\/v_/,
+                /^\/w_/,
+                /^\/a_/,
+                /^\/resource\/pcw\/play\//
+            ]
+        },
+        {
+            name: 'qq',
+            hosts: [/qq\.com$/],
+            paths: [
+                /^\/x\/cover\//,
+                /^\/x\/page\//,
+                /^\/tv\//
+            ]
+        },
+        {
+            name: 'mgtv',
+            hosts: [/mgtv\.com$/],
+            paths: [/^\/b\//]
+        },
+        {
+            name: 'sohu',
+            hosts: [/sohu\.com$/],
+            paths: [
+                /^\/v\//,
+                /^\/album\//
+            ]
+        },
+        {
+            name: 'le',
+            hosts: [/le\.com$/],
+            paths: [/^\/ptv\/vplay\//]
+        },
+        {
+            name: 'pptv',
+            hosts: [/pptv\.com$/],
+            paths: [/^\/show\//]
+        },
+        {
+            name: 'tudou',
+            hosts: [/tudou\.com$/],
+            paths: [
+                /^\/listplay\//,
+                /^\/albumplay\//,
+                /^\/programs\/view\//
+            ]
+        },
+        {
+            name: 'baofeng',
+            hosts: [/baofeng\.com$/],
+            paths: [/^\/play\//]
+        },
+        {
+            name: 'wasu',
+            hosts: [/wasu\.cn$/],
+            paths: [/^\/Play\/show\//]
+        },
+        {
+            name: '1905',
+            hosts: [/1905\.com$/],
+            paths: [
+                /^\/video\//,
+                /^\/play\//,
+                /^\/.*\/play\//
+            ]
+        },
+        {
+            name: 'miguvideo',
+            hosts: [/miguvideo\.com$/],
+            paths: [/^\/mgs\//]
+        },
+        {
+            name: 'acfun',
+            hosts: [/acfun\.cn$/],
+            paths: [/^\/v\//]
+        },
+        {
+            name: 'bilibili',
+            hosts: [/bilibili\.com$/],
+            paths: [
+              /^\/bangumi\/play\//
+            ]
         }
-      }
+    ];
+
+    for (const rule of rules) {
+        if (rule.hosts.some(h => h.test(host)) &&
+            rule.paths.some(p => p.test(pathname))) {
+            return rule.name;
+        }
     }
-    return result;
+    return null;
+  };
+  this.isRun = function() { //判断是否运行
+    return !!this.detectVideoPlatform();
   };
   this.showPlayerWindow = function(playObject) { //显示播放窗口
     const url = playObject.url + window.location.href;
@@ -3490,7 +3580,7 @@ function SearchEnginesNavigation() {
 								<div class="tab-c-links${elementNum}">${linkArray.join("")}</div>
 							</div>
 							<div style='margin-bottom:10px;margin-top:5px;font-size:12px;'>
-								<a target='_blank' href='https://github.com/huahuacatTX/greasyfork' style="color: #000;background-color: #efefef;padding: 2px 5px; border-radius: 2px;">*该数据由油猴脚本提供</a>
+								<a target='_blank' onclick="return false;" href='javascript:void(0);' style="color: #000;background-color: #efefef;padding: 2px 5px; border-radius: 2px;">*该数据由油猴脚本提供</a>
 								&nbsp;&nbsp;
 								<a href="javascript:void(0);" name="customNavigation" style="color: #000;background-color: #efefef;padding: 2px 5px; border-radius: 2px;">🔧自定义网址</a>
 							</div>
@@ -3908,6 +3998,7 @@ function SearchPageObject() {
     const allows = [
       /^https:\/\/www\.taobao\.com(\/|\/\?)?/i,
       /^https:\/\/s\.taobao\.com/i,
+	  /^https:\/\/new-s\.taobao\.com/i,
       /^https:\/\/shop(\d+)\.taobao\.com/i,
       /^https:\/\/www\.tmall\.com(\/|\/\?)?/i,
       /pages\.tmall\.com/i,
@@ -4208,7 +4299,8 @@ function SearchPageObject() {
       const platform = commonFunctionObject.getEcommercePlatform();
       this.requestConf().then(conf => {
         const selectorElementList = this.pickupSearchElements(conf, (platform === "tmall" ? "taobao" : platform));
-        if (this.intervalIsRunComplete) {
+        
+		if (this.intervalIsRunComplete) {
           this.searchPage(selectorElementList);
         }
         setInterval(() => {
@@ -4697,85 +4789,17 @@ try{
         const downloadText = downloadDom.querySelector('.btn');
         downloadText.innerText = '下载';
         downloadText.style.cssText = 'font-size:14px;font-weight:600;';
-        downloadText.setAttribute('id', 'zhmDouyinDownload' + videoId);
-
-        const detail = playContainer.querySelector('xg-icon:nth-of-type(1)').children[0];
-        const linkUrl = detail.getAttribute('href') ? detail.getAttribute('href') : location.href;
-
-        if (linkUrl.indexOf('www.douyin.com') === -1) {
-          linkUrl = '//www.douyin.com' + linkUrl;
-        }
-
-        downloadText.setAttribute('data-url', linkUrl);
-        downloadText.removeAttribute('target');
-        downloadText.setAttribute('href', 'javascript:void(0);');
-
-        const virtualDom = downloadDom.querySelector('.virtual');
-        downloadDom.onmouseover = function() {
-          if (location.href.indexOf('search') === -1) {
-            virtualDom.style.cssText = 'display:block !important';
-          } else {
-            virtualDom.style.cssText = 'display:block !important;margin-bottom:37px;';
-          }
-        };
-
-        downloadDom.onmouseout = function() {
-          virtualDom.style.cssText = 'display:none !important';
-        };
-
-        let downloadHtml = '';
-        downloadOption.forEach(function(item) {
-          if (item.id === "toServer") {
-            downloadHtml += `<div style="text-align:center;width:100px;" class="item ${item.id}" id="${item.id}${videoId}">AI视频分析<span style="color:red;">(热门)</span></div>`;
-          } else {
-            downloadHtml += `<div style="text-align:center;width:100px;" class="item ${item.id}" id="${item.id}${videoId}">${item.name}</div>`;
-          }
-        });
-
-        if (downloadDom.querySelector('.virtual')) {
-          downloadDom.querySelector('.virtual').innerHTML = downloadHtml;
-        }
-
         playClarityDom.after(downloadDom);
-
-        const toLinkDom = playContainer.querySelector('#toLink' + videoId);
-        if (toLinkDom) {
-          toLinkDom.addEventListener('click', function() {
-            if (url.match(/^blob/)) {
-              commonFunctionObject.webToast({
-                "message": "加密视频无法直接打开。可复制分享链，重新打开页面使用“下载”",
-                "background": "#141414"
-              });
-            } else {
-              window.open(url);
-            }
-          });
-        }
-
-        const toAi = playContainer.querySelector('#toServer' + videoId);
-        if (toAi) {
-          toAi.addEventListener('click', function() {
-            window.open("https://www.quzhuanpan.com/redirect/d?t=" + (new Date()).getTime() + "&url=" + window.location.href);
-          });
-        }
+		
+		downloadDom.addEventListener("click", ()=>{
+			window.open("https://www.tool77.com/zh-CN/v/downloader?url="+encodeURIComponent(window.location.href));
+		});
       }
     }
-
-    function player() {
-      if (window.location.host.indexOf(".douyinvod.com") !== -1) {
-        const html = `<div style="position:fixed;left:15px;bottom:300px;background-color:#ccc;width:200px;font-size:14px;padding:5px;">
-					<div style="color:red;font-weight:bold;">直接下载已经失效，需要在视频框点击：鼠标右键 ->视频另存为，然后保存视频</div>
-					<div style="margin-top:15px;"># 纯纯的资源分享，需要的自取：<a target="_blank" href="https://www.quzhuanpan.com/redirect/pan?t=${(new Date()).getTime()}&url=${window.location.href}">点我查看【建议保存】</a></div>
-					<div style="margin-top:15px;"># 效率工具，免费AI总结/摘要/改写/翻译，支持搜索学术文献一键阅读：<a target="_blank" href="https://www.quzhuanpan.com/redirect/d?t=${(new Date()).getTime()}&url=${window.location.href}">点我查看</a></div>
-				</div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
-      }
-    }
-
+	
     setInterval(function() {
       run();
     }, 500);
-    player();
   };
   this.kuaishouVideoDownloader = function() {
     if (window.location.host !== "www.kuaishou.com") {
